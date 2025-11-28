@@ -38,16 +38,19 @@ def telegram_webhook():
             telegram_app.add_handler(CommandHandler("help", help_command))
             telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
             
-            # Retrieve the JSON update object
-            update_json = request.get_json(force=True)
-            update = Update.de_json(update_json, telegram_app.bot)
-            
             # Process the update in a new event loop
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             
-            # Initialize the app (required for v20+) and process update
+            # Initialize the app FIRST (required for v20+)
             loop.run_until_complete(telegram_app.initialize())
+            
+            # Retrieve the JSON update object
+            # We pass the bot object from the initialized app
+            update_json = request.get_json(force=True)
+            update = Update.de_json(update_json, telegram_app.bot)
+            
+            # Process update
             loop.run_until_complete(telegram_app.process_update(update))
             loop.run_until_complete(telegram_app.shutdown())
             
